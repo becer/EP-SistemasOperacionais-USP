@@ -1,0 +1,22 @@
+# --- binarios e artefatos de build ---
+bin/
+obj/
+*.o
+*.out
+*.exe
+escalonador
+
+# --- editores / IDEs ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- sistema operacional ---
+.DS_Store
+Thumbs.db
+
+# --- arquivos temporarios ---
+*.tmp
+*.bak

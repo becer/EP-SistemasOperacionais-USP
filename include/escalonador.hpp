@@ -23,6 +23,8 @@ typedef struct BCP{
 class Process{
 public:
 	int prioridade;
+	int id = 0;
+	long ultimaExecucao = 0;
 	BCP bcp;
 	Process(int prioridade, BCP bcp);
 
@@ -35,7 +37,9 @@ int executarProcessos();
 
 struct comparaCreditos{
 	bool operator()(const Process* a, const Process* b) const{
-		return a->bcp.creditos < b->bcp.creditos;
+		if(a->bcp.creditos != b->bcp.creditos) return a->bcp.creditos < b->bcp.creditos;
+		if(a->ultimaExecucao != b->ultimaExecucao) return a->ultimaExecucao < b->ultimaExecucao;
+		return a->id > b->id;
 	}
 };
 

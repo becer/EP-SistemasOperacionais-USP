@@ -11,13 +11,13 @@ Process::Process(int prioridade, BCP bcp) : prioridade(prioridade), bcp(bcp){}
 // Ao redistribuir, restaura creditos = prioridade e reconstroi o heap.
 static void redistribuirCreditos(){
     for(const auto& p : tabelaProcessos)
-        if(p.bcp.creditos > 0) return;
+        if(p.bcp.estado != terminado && p.bcp.creditos > 0) return;
 
     for(auto& p : tabelaProcessos)
-        p.bcp.creditos = p.prioridade;
+        if(p.bcp.estado != terminado) p.bcp.creditos = p.prioridade;
 
-    // Reconstroi o heap: sem isso, a priority_queue continua ordenada
-    // pelos creditos antigos (heap property e invalidada ao mudar creditos).
+    //reconstroi o heap: sem isso, a priority_queue continua ordenada
+    //pelos creditos antigos (heap property e invalidada ao mudar creditos).
     std::priority_queue<Process*, std::vector<Process*>, comparaCreditos> nova;
     while(!tabelaProntos.empty()){
         nova.push(tabelaProntos.top());
@@ -61,8 +61,13 @@ int inicializarProcessos(int numProcessos){
 		bcp_programa_atual.PC = 0;
 		
 		tabelaProcessos.emplace_back(Process(getPrioridade(i+1), bcp_programa_atual));
-		logCarregando(bcp_programa_atual.nomePrograma);
+		tabelaProcessos.back().id = i + 1;
 		tabelaProntos.push(&tabelaProcessos.back());
+	}
+	auto copia = tabelaProntos;
+	while(!copia.empty()){
+		logCarregando(copia.top()->bcp.nomePrograma);
+		copia.pop();
 	}
 	return 0;
 }
@@ -79,6 +84,7 @@ int executarProcessos(){
 	int totalTrocas = 0;          //uma troca = interrupcao + escolha de outro
 	int totalInstrucoes = 0;      //soma das instrucoes executadas em todos os surtos
 	int totalQuanta = 0;          //numero de surtos executados
+	long relogio = 0; 			  //variavel para desimpate
 
 	while(numProcessos > 0){
 
@@ -105,6 +111,7 @@ int executarProcessos(){
 		tabelaProntos.pop();
 
 		p->bcp.estado = executando;
+		p->ultimaExecucao = ++relogio;
 		p->bcp.creditos--;                       //perde 1 credito ao comecar
 		int quantumRestante = p->bcp.quantum;    //copia local, NAO mexe no BCP
 
@@ -132,7 +139,6 @@ int executarProcessos(){
 				p->bcp.PC++;
 				p->bcp.estado = bloqueado;
 				p->bcp.tempEspera = 2;
-				tabelaBloqueados.push(p);
 				instrucoesNesteSurto++;          //E/S conta nas estatisticas
 				logES(p->bcp.nomePrograma);
 				bloqueou = true;
@@ -154,6 +160,7 @@ int executarProcessos(){
 
 		//decide o destino do processo
 		if(terminou){
+			p->bcp.estado = terminado;
 			numProcessos--;                      //NAO volta para nenhuma fila
 		}
 		else if(bloqueou){
@@ -184,6 +191,7 @@ int executarProcessos(){
 				tabelaBloqueados.push(b);
 			}
 		}
+		if(bloqueou) tabelaBloqueados.push(p);
 
 		//tenta redistribuir creditos ao fim de cada rodada
 		redistribuirCreditos();

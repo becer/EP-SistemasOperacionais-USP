@@ -9,7 +9,8 @@
 enum Estado{
 	executando = 0,
 	pronto,
-	bloqueado
+	bloqueado,
+	terminado
 };
 
 int getQuantum();
